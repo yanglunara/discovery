@@ -15,20 +15,19 @@ var (
 	_ registry.Registrar = (*Registry)(nil)
 )
 
-type KV func(ctx context.Context, client *clientv3.Client, lease clientv3.Lease, ttl time.Duration, key, value string) (leaseID clientv3.LeaseID, err error)
-
-type Get interface {
+type ClientKV interface {
 	Get(ctx context.Context, key, name string, kv clientv3.KV) ([]*registry.Service, error)
+	Set(ctx context.Context, client *clientv3.Client, lease clientv3.Lease, ttl time.Duration, key, value string) (leaseID clientv3.LeaseID, err error)
 }
 
 var (
-	_ Get = (*get)(nil)
+	_ ClientKV = (*clientKV)(nil)
 )
 
-type get struct {
+type clientKV struct {
 }
 
-func (g *get) Get(ctx context.Context, key, name string, kv clientv3.KV) ([]*registry.Service, error) {
+func (g *clientKV) Get(ctx context.Context, key, name string, kv clientv3.KV) ([]*registry.Service, error) {
 	resp, err := kv.Get(ctx, key, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -49,6 +48,19 @@ func (g *get) Get(ctx context.Context, key, name string, kv clientv3.KV) ([]*reg
 	return items, nil
 }
 
+func (g *clientKV) Set(ctx context.Context, client *clientv3.Client, lease clientv3.Lease, ttl time.Duration, key, value string) (leaseID clientv3.LeaseID, err error) {
+	var (
+		grant *clientv3.LeaseGrantResponse
+	)
+	if grant, err = lease.Grant(ctx, int64(ttl.Seconds())); err != nil {
+		return
+	}
+	if _, err = client.Put(ctx, key, value, clientv3.WithLease(grant.ID)); err != nil {
+		return 0, err
+	}
+	return grant.ID, nil
+}
+
 type options struct {
 	// 上下文
 	ctx context.Context
@@ -65,10 +77,9 @@ type Registry struct {
 	//租约
 	lease clientv3.Lease
 	//上下文取消函数
-	maps   map[*registry.Service]context.CancelFunc
-	opt    *options
-	withKV KV
-	Inter  Get
+	maps  map[*registry.Service]context.CancelFunc
+	opt   *options
+	Inter ClientKV
 }
 
 func NewRegistry(ctx context.Context, client *clientv3.Client) *Registry {
@@ -82,7 +93,7 @@ func NewRegistry(ctx context.Context, client *clientv3.Client) *Registry {
 			maxRetry:  5,
 		},
 		maps:  make(map[*registry.Service]context.CancelFunc),
-		Inter: &get{},
+		Inter: &clientKV{},
 	}
 }
 
@@ -105,28 +116,14 @@ func (r *Registry) Register(ctx context.Context, service *registry.Service) (err
 	}
 	//用于创建一个新的租约客户端
 	r.lease = clientv3.NewLease(r.client)
-	//
-	withKV := func(ctx context.Context, client *clientv3.Client, lease clientv3.Lease, ttl time.Duration, key, value string) (leaseID clientv3.LeaseID, err error) {
-		var (
-			grant *clientv3.LeaseGrantResponse
-		)
-		if grant, err = lease.Grant(ctx, int64(ttl.Seconds())); err != nil {
-			return
-		}
-		if _, err = r.client.Put(ctx, key, value, clientv3.WithLease(grant.ID)); err != nil {
-			return 0, err
-		}
-		return grant.ID, nil
-	}
+
 	// 注册服务
-	if leaseID, err = withKV(ctx, r.client, r.lease, r.opt.ttl, key, string(buf)); err != nil {
+	if leaseID, err = r.Inter.Set(ctx, r.client, r.lease, r.opt.ttl, key, string(buf)); err != nil {
 		return
 	}
 	// 上下文 取消函数
 	newCtx, cancel := context.WithCancel(r.opt.ctx)
 	r.maps[service] = cancel
-	// 心跳
-	r.withKV = withKV
 
 	go r.heartbeat(newCtx, leaseID, key, string(buf))
 
@@ -156,7 +153,7 @@ func (r *Registry) heartbeat(ctx context.Context, leaseID clientv3.LeaseID, key,
 				cancelCtx, cancel := context.WithCancel(ctx)
 				go func() {
 					defer cancel()
-					if id, err := r.withKV(cancelCtx, r.client, r.lease, r.opt.ttl, key, value); err != nil {
+					if id, err := r.Inter.Set(cancelCtx, r.client, r.lease, r.opt.ttl, key, value); err != nil {
 						errChan <- err
 					} else {
 						idChan <- id
@@ -216,7 +213,7 @@ func (r *Registry) Watch(ctx context.Context, serviceName string) (registry.Watc
 		Key:    fmt.Sprintf("%s/%s", r.opt.namespace, serviceName),
 		Name:   serviceName,
 		Client: r.client,
-	})
+	}, r.Inter)
 }
 
 func (r *Registry) Get(ctx context.Context, name string) ([]*registry.Service, error) {

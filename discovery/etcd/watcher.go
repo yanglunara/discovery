@@ -25,16 +25,16 @@ type watcher struct {
 	watcher   clientv3.Watcher
 	kv        clientv3.KV
 	first     bool
-	Inter     Get
+	Inter     ClientKV
 }
 
-func newWatcher(ctx context.Context, conf *watchConf) (*watcher, error) {
+func newWatcher(ctx context.Context, conf *watchConf, inter ClientKV) (*watcher, error) {
 	w := &watcher{
 		watchConf: conf,
 		kv:        clientv3.NewKV(conf.Client),
 		watcher:   clientv3.NewWatcher(conf.Client),
 		first:     true,
-		Inter:     &get{},
+		Inter:     inter,
 	}
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.watchChan = w.watcher.Watch(

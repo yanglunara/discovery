@@ -24,7 +24,7 @@ func TestNewRegistry(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		clientv3.Close()
+		_ = clientv3.Close()
 	}()
 	ctx := context.Background()
 
