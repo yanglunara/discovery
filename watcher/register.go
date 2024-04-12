@@ -15,7 +15,7 @@ var (
 
 type Options struct {
 	Ctx       context.Context
-	Namespace register.NamespaceDefault // 命名空间
+	Namespace register.Namespace // 命名空间
 	Ttl       time.Duration
 	MaxRetry  int //最大重试次数
 }
