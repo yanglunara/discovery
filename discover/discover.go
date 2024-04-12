@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/yanglunara/discovery/register"
+	"github.com/yanglunara/discovery/watcher"
 	"go.etcd.io/etcd/clientv3"
 	"google.golang.org/grpc/resolver"
 )
@@ -24,7 +25,7 @@ func NewDiscovery(ctx context.Context, name string, client *clientv3.Client) *Di
 	return &Discovery{
 		ctx:     ctx,
 		client:  client,
-		watcher: local.NewWatcher(ctx, name, client),
+		watcher: watcher.NewWatcher(ctx, name, client),
 	}
 }
 
