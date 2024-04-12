@@ -1,8 +1,10 @@
-package etcd
+package watcher
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/yanglunara/discovery/register"
@@ -25,7 +27,8 @@ type watcher struct {
 	serviceName string
 }
 
-func newWatcher(ctx context.Context, key, name string, client *clientv3.Client) (*watcher, error) {
+func NewWatcher(ctx context.Context, name string, client *clientv3.Client) register.Watcher {
+	key := strings.TrimPrefix(fmt.Sprintf("/%s/%s", string(register.NamespaceDefault), name), "/")
 	w := &watcher{
 		key:         key,
 		client:      client,
@@ -34,13 +37,22 @@ func newWatcher(ctx context.Context, key, name string, client *clientv3.Client) 
 		first:       true,
 		serviceName: name,
 	}
+
 	w.ctx, w.cancel = context.WithCancel(ctx)
-	w.watchChan = w.watcher.Watch(w.ctx, key, clientv3.WithPrefix(), clientv3.WithRev(0), clientv3.WithKeysOnly())
-	err := w.watcher.RequestProgress(w.ctx)
-	if err != nil {
-		return nil, err
+	//启动监听
+	w.watchChan = w.watcher.Watch(w.ctx, key,
+		clientv3.WithPrefix(),
+		clientv3.WithRev(0),
+		clientv3.WithKeysOnly(),
+	)
+	if err := w.watcher.RequestProgress(w.ctx); err != nil {
+		panic(err)
 	}
-	return w, nil
+	return w
+}
+
+func (w *watcher) Watcher() clientv3.WatchChan {
+	return w.watchChan
 }
 
 func (w *watcher) Next() ([]*register.ServiceInstance, error) {
@@ -49,23 +61,24 @@ func (w *watcher) Next() ([]*register.ServiceInstance, error) {
 		w.first = false
 		return item, err
 	}
-
 	select {
 	case <-w.ctx.Done():
 		return nil, w.ctx.Err()
 	case watchResp, ok := <-w.watchChan:
 		if !ok || watchResp.Err() != nil {
 			time.Sleep(time.Second)
-			err := w.reWatch()
-			if err != nil {
+			if err := w.reWatch(); err != nil {
 				return nil, err
 			}
+		}
+		for _, event := range watchResp.Events {
+			fmt.Printf("event: %v\n", event)
 		}
 		return w.getInstance()
 	}
 }
 
-func (w *watcher) Stop() error {
+func (w *watcher) Close() error {
 	w.cancel()
 	return w.watcher.Close()
 }

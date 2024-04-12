@@ -1,24 +1,21 @@
-package etcd
+package watcher
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"time"
-
 	"github.com/yanglunara/discovery/register"
 	"go.etcd.io/etcd/clientv3"
+	"strings"
+	"time"
 )
 
 var (
 	_ register.Registrar = (*Registry)(nil)
-
-	_ register.Discovery = (*Registry)(nil)
 )
 
 type Options struct {
 	Ctx       context.Context
-	Namespace string // 命名空间
+	Namespace register.NamespaceDefault // 命名空间
 	Ttl       time.Duration
 	MaxRetry  int //最大重试次数
 }
@@ -72,7 +69,7 @@ func (r *Registry) Register(ctx context.Context, service *register.ServiceInstan
 	r.lease = clientv3.NewLease(r.client)
 	var (
 		leaseID clientv3.LeaseID
-		key     string = r.Namespace + "/" + service.Name + "/" + service.ID
+		key     string = strings.TrimPrefix(string(r.Namespace)+"/"+service.Name+"/"+service.ID, "/")
 	)
 	// 注册服务
 	if leaseID, err = r.withKV(ctx,
@@ -88,30 +85,6 @@ func (r *Registry) Register(ctx context.Context, service *register.ServiceInstan
 	return nil
 }
 
-func (r *Registry) GetService(ctx context.Context, name string) ([]*register.ServiceInstance, error) {
-	resp, err := r.kv.Get(ctx, fmt.Sprintf("%s/%s", r.Namespace, name), clientv3.WithPrefix())
-	if err != nil {
-		return nil, err
-	}
-	items := make([]*register.ServiceInstance, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		si := new(register.ServiceInstance)
-		if err := json.Unmarshal(kv.Value, si); err != nil {
-			return nil, err
-		}
-		if si.Name != name {
-			continue
-		}
-		items = append(items, si)
-	}
-	return items, nil
-}
-
-// Watch creates a watcher according to the service name.
-func (r *Registry) Watch(ctx context.Context, name string) (register.Watcher, error) {
-	return newWatcher(ctx, fmt.Sprintf("%s/%s", r.Namespace, name), name, r.client)
-}
-
 func (r *Registry) Deregister(ctx context.Context, service *register.ServiceInstance) (err error) {
 	defer func() {
 		if r.lease != nil {
@@ -123,9 +96,8 @@ func (r *Registry) Deregister(ctx context.Context, service *register.ServiceInst
 		cancel()
 		delete(r.ctxMap, service)
 	}
-	if _, err = r.client.Delete(
-		ctx,
-		r.Namespace+"/"+service.Name+"/"+service.ID); err != nil {
+	key := strings.TrimPrefix(string(r.Namespace)+"/"+service.Name+"/"+service.ID, "/")
+	if _, err = r.client.Delete(ctx, key); err != nil {
 		return
 	}
 	return nil
