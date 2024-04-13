@@ -2,6 +2,7 @@ package consul
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,6 +14,7 @@ import (
 var (
 	_ register.Registrar = (*Registry)(nil)
 	_ register.Stopper   = (*Registry)(nil)
+	_ register.Discovery = (*Registry)(nil)
 )
 
 func NewRegistry(client *api.Client) *Registry {
@@ -55,6 +57,35 @@ func (r *Registry) Deregister(ctx context.Context, service *register.ServiceInst
 	return r.cli.Deregister(ctx, service.ID)
 }
 
+func (r *Registry) GetService(tx context.Context, serviceName string) ([]*register.ServiceInstance, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	set := r.registry[serviceName]
+	remote := func(cli *Client) []*register.ServiceInstance {
+		if service, _, err := cli.Service(tx, serviceName, 0, true); err == nil && len(service) > 0 {
+			return service
+		}
+		return nil
+	}
+	if set == nil {
+		if list := remote(r.cli); len(list) > 0 {
+			return list, nil
+		}
+		return nil, fmt.Errorf("service %s not resolved in registry", serviceName)
+	}
+	var (
+		ss []*register.ServiceInstance
+		ok bool
+	)
+	if ss, ok = set.atoValue.Load().([]*register.ServiceInstance); !ok && ss == nil {
+		if list := remote(r.cli); len(list) > 0 {
+			return list, nil
+		}
+		return nil, fmt.Errorf("service %s not resolved in registry", serviceName)
+	}
+	return ss, nil
+
+}
 func (r *Registry) Watch(ctx context.Context, name string) (register.Watcher, error) {
 	// 执行加锁
 	r.lock.Lock()

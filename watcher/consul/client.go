@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net"
 	"net/url"
 	"strconv"
@@ -160,8 +159,14 @@ func (c *Client) startHearBeat(serviceID string, asr *api.AgentServiceRegistrati
 					deregister(c.cli.Agent(), serviceID)
 					return
 				}
-				time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
-				_ = c.cli.Agent().ServiceRegister(asr)
+				var (
+					arr []int
+				)
+				for i := 0; i < c.maxTry; i++ {
+					arr = append(arr, 1<<i)
+					time.Sleep(time.Second * time.Duration(arr[i]))
+					_ = c.cli.Agent().ServiceRegister(asr)
+				}
 			}
 		}
 	}

@@ -1,8 +1,11 @@
 package builder
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/hashicorp/consul/api"
+	"github.com/yanglunara/discovery/watcher/consul"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/serviceconfig"
 )
@@ -24,19 +27,20 @@ func (m *mockConn) ParseServiceConfig(_ string) *serviceconfig.ParseResult {
 }
 
 func TestBuilder_Build(t *testing.T) {
-	// ctx := context.Background()
-	// re := discover.NewDiscovery(ctx, consul.NewWatcher(ctx))
-	// b := NewBuilder(re)
-	// _, err := b.Build(
-	// 	resolver.Target{
-	// 		URL: url.URL{
-	// 			Scheme: resolver.GetDefaultScheme(),
-	// 			Path:   "grpc://authority/endpoint",
-	// 		},
-	// 	},
-	// 	&mockConn{},
-	// 	resolver.BuildOptions{},
-	// )
+	cli, _ := api.NewClient(&api.Config{Address: "host.docker.internal:8500"})
+
+	re := consul.NewRegistry(cli)
+	b := NewBuilder(re)
+	_, err := b.Build(
+		resolver.Target{
+			URL: url.URL{
+				Scheme: resolver.GetDefaultScheme(),
+				Path:   "grpc://authority/endpoint",
+			},
+		},
+		&mockConn{},
+		resolver.BuildOptions{},
+	)
 	// time.Sleep(100 * time.Second)
 	// if err != nil {
 	// 	t.Errorf("expected no error, got %v", err)
