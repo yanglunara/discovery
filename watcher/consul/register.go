@@ -113,7 +113,8 @@ func (r *Registry) Watch(ctx context.Context, name string) (register.Watcher, er
 	set.lock.Unlock()
 	if ss, ok := set.atoValue.Load().([]*register.ServiceInstance); ok && len(ss) > 0 {
 		w.event <- struct{}{}
-	} else {
+	}
+	if !ok {
 		if err := r.resolve(set.ctx, set); err != nil {
 			return nil, err
 		}
