@@ -88,3 +88,7 @@ type Namespace string
 const (
 	NamespaceDefault Namespace = "microservices"
 )
+
+type DebugOption struct {
+	IsDebug bool
+}

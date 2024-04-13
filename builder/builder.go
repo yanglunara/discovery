@@ -12,12 +12,14 @@ import (
 
 var (
 	_ resolver.Builder = (*Builder)(nil)
+	_ register.Stopper = (*Builder)(nil)
 )
 
 type Builder struct {
 	discoverer register.Discovery
 	tiemout    time.Duration
 	cancel     context.CancelFunc
+	resolver   resolver.Resolver
 }
 
 func NewBuilder(b register.Discovery) resolver.Builder {
@@ -64,11 +66,18 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 		ctx:    ctx,
 		cancel: cancel,
 	}
+	b.resolver = r
 	go r.watch()
 
-	return nil, nil
+	return r, nil
 }
 
 func (b *Builder) Scheme() string {
 	return "discovery"
+}
+
+func (b *Builder) Close() error {
+	b.cancel()
+	b.resolver.Close()
+	return nil
 }

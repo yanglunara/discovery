@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/yanglunara/discovery/register"
+	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -47,16 +48,56 @@ func (r *discoveryResolver) watch() {
 	}
 }
 
-func (r *discoveryResolver) update(ins []*register.ServiceInstance) {
-	var addrs []resolver.Address
-	for _, in := range ins {
-		for _, addr := range in.Endpoints {
-			u, err := url.Parse(addr)
-			if err == nil && u.Scheme == "grpc" {
-				addrs = append(addrs, resolver.Address{Addr: u.Host, ServerName: in.Name})
+func (r *discoveryResolver) ParseEndpoint(endpoints []string) (string, error) {
+	for _, addr := range endpoints {
+		if u, err := url.Parse(addr); err == nil && u.Scheme == "grpc" {
+			return u.Host, nil
+		} else {
+			if err != nil {
+				return "", err
 			}
 		}
 	}
-	fmt.Printf("log.Logger: %#v %d \n ", addrs, len(addrs))
-	//r.cc.UpdateState(resolver.State{Addresses: addrs})
+	return "", nil
+}
+
+func (r *discoveryResolver) update(ins []*register.ServiceInstance) {
+	var (
+		endpoints = make(map[string]struct{})
+		filtered  = make([]*register.ServiceInstance, 0, len(ins))
+	)
+	for _, in := range ins {
+		ept, err := r.ParseEndpoint(in.Endpoints)
+		if err != nil || ept == "" {
+			continue
+		}
+		if _, ok := endpoints[ept]; ok {
+			continue
+		}
+		filtered = append(filtered, in)
+	}
+	addrs := make([]resolver.Address, 0, len(filtered))
+	parseAttributes := func(metadata map[string]string) *attributes.Attributes {
+		a := new(attributes.Attributes)
+		for k, v := range metadata {
+			a = a.WithValue(k, v)
+		}
+		return a
+	}
+	for _, in := range filtered {
+		ept, _ := r.ParseEndpoint(in.Endpoints)
+		endpoints[ept] = struct{}{}
+		addr := resolver.Address{
+			ServerName: in.Name,
+			Attributes: parseAttributes(in.Metadata).WithValue("rawServiceInstance", in),
+			Addr:       ept,
+		}
+		addrs = append(addrs, addr)
+	}
+	if len(addrs) == 0 {
+		return
+	}
+	if err := r.cc.UpdateState(resolver.State{Addresses: addrs}); err != nil {
+		fmt.Printf("[resolver] failed to update state: %s \n", err.Error())
+	}
 }
