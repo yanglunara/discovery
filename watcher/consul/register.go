@@ -34,17 +34,20 @@ func NewRegistry(client *api.Client) *Registry {
 	// 初始化 entries
 	r.cli.entries = NewEntries(NewResolver(r.cli.ctx), r.cli.cli)
 	r.cli.timeout = r.timeout
+
 	return r
 }
 
 type Registry struct {
 	cli      *Client
+	service  *register.ServiceInstance
 	registry map[string]*service
 	lock     sync.RWMutex
 	timeout  time.Duration
 }
 
 func (r *Registry) Register(ctx context.Context, service *register.ServiceInstance) (err error) {
+	r.service = service
 	return r.cli.Register(ctx, service)
 }
 
@@ -132,5 +135,9 @@ func (r *Registry) resolve(ctx context.Context, ss *service) (err error) {
 func (r *Registry) Close() error {
 	r.registry = nil
 	r.cli.Close()
+	// 注销服务
+	if r.service != nil {
+		_ = r.Deregister(context.Background(), r.service)
+	}
 	return nil
 }
