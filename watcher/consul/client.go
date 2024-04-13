@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/url"
 	"strconv"
@@ -73,6 +74,7 @@ func (c *Client) Register(ctx context.Context, service *register.ServiceInstance
 		if raw, err = url.Parse(endpoint); err != nil {
 			return
 		}
+
 		//端口号的范围就是 0 到 65535
 		port, _ := strconv.ParseUint(raw.Port(), 10, 16)
 		// 检查是否是合法的地址
@@ -87,12 +89,12 @@ func (c *Client) Register(ctx context.Context, service *register.ServiceInstance
 		ID:              service.ID,
 		Name:            service.Name,
 		Meta:            service.Metadata,
-		Tags:            []string{0: fmt.Sprintf("version=%s", service.Version)},
+		Tags:            []string{fmt.Sprintf("version=%s", service.Version)},
 		TaggedAddresses: address,
 	}
 	if len(checkAddress) > 0 {
 		host, portRaw, _ := net.SplitHostPort(checkAddress[0])
-		port, _ := strconv.ParseUint(portRaw, 10, 16)
+		port, _ := strconv.ParseUint(portRaw, 10, 32)
 		asr.Address = host
 		asr.Port = int(port)
 	}
@@ -111,7 +113,7 @@ func (c *Client) Register(ctx context.Context, service *register.ServiceInstance
 	if c.heartBeat {
 		newHealth := c.healthCheckInterval * 2
 		asr.Checks = append(asr.Checks, &api.AgentServiceCheck{
-			CheckID:                        "service:%s" + service.ID,
+			CheckID:                        "service:" + service.ID,
 			TTL:                            newHealth.String(),
 			DeregisterCriticalServiceAfter: c.deregisterCriticalServiceAfter.String(),
 		})
@@ -129,27 +131,25 @@ func (c *Client) Register(ctx context.Context, service *register.ServiceInstance
 // startHearBeat 开启心跳
 func (c *Client) startHearBeat(serviceID string, asr *api.AgentServiceRegistration) {
 	time.Sleep(time.Second * 1)
-	if err := c.cli.Agent().UpdateTTL("service:"+serviceID, "pass", "pass"); err != nil {
-		return
-	}
+	_ = c.cli.Agent().UpdateTTL("service:"+serviceID, "pass", "pass")
 	ticker := time.NewTicker(c.healthCheckInterval)
 	defer ticker.Stop()
 	deregister := func(agent *api.Agent, serviceID string) {
 		_ = agent.ServiceDeregister(serviceID)
 	}
-	agent := c.cli.Agent()
 	for {
 		select {
 		case <-c.ctx.Done():
 			// 注销服务
-			deregister(agent, serviceID)
+			deregister(c.cli.Agent(), serviceID)
 			return
 		case <-ticker.C:
-			if errors.Is(c.ctx.Err(), context.Canceled) {
+			if errors.Is(c.ctx.Err(), context.Canceled) ||
+				errors.Is(c.ctx.Err(), context.DeadlineExceeded) {
 				deregister(c.cli.Agent(), serviceID)
 				return
 			}
-			if err := agent.UpdateTTLOpts(
+			if err := c.cli.Agent().UpdateTTLOpts(
 				"service:"+serviceID,
 				"pass",
 				"pass",
@@ -157,18 +157,11 @@ func (c *Client) startHearBeat(serviceID string, asr *api.AgentServiceRegistrati
 			); err != nil {
 				if errors.Is(c.ctx.Err(), context.Canceled) ||
 					errors.Is(err, context.DeadlineExceeded) {
-					deregister(agent, serviceID)
+					deregister(c.cli.Agent(), serviceID)
 					return
 				}
-				var (
-					arrTry []int
-				)
-				for i := 0; i < c.maxTry; i++ {
-					arrTry = append(arrTry, 1<<i)
-					_ = agent.ServiceRegister(asr)
-					// 重试间隔
-					time.Sleep(time.Second * time.Duration(arrTry[i]))
-				}
+				time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
+				_ = c.cli.Agent().ServiceRegister(asr)
 			}
 		}
 	}
