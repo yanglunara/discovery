@@ -31,7 +31,7 @@ func TestBuilder_Build(t *testing.T) {
 
 	re := consul.NewRegistry(cli)
 	b := NewBuilder(re)
-	_, err := b.Build(
+	_, _ = b.Build(
 		resolver.Target{
 			URL: url.URL{
 				Scheme: resolver.GetDefaultScheme(),

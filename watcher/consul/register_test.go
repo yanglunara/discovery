@@ -97,26 +97,6 @@ func TestRegister(t *testing.T) {
 				}
 			}
 
-			// watch, err := r.Watch(tt.args.ctx, tt.args.serverName)
-			// if err != nil {
-			// 	t.Error(err)
-			// }
-			// got, err := watch.Next()
-			// if (err != nil) != tt.wantErr {
-			// 	t.Errorf("GetService() error = %v, wantErr %v", err, tt.wantErr)
-			// 	t.Errorf("GetService() got = %v", got)
-			// 	return
-			// }
-			// if !reflect.DeepEqual(got, tt.want) {
-			// 	t.Errorf("GetService() got = %v, want %v", got, tt.want)
-			// }
-
-			// for _, instance := range tt.args.server {
-			// 	_ = r.Deregister(tt.args.ctx, instance)
-			// }
 		})
-	}
-
-	for {
 	}
 }
