@@ -54,7 +54,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 	if err != nil {
 		// 关闭所有资源
 		cancel()
-		b.discoverer.Close()
+		_ = b.discoverer.Close()
 		return nil, err
 	}
 	r := &discoveryResolver{
