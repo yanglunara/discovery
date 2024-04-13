@@ -2,6 +2,7 @@ package consul
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/yanglunara/discovery/register"
@@ -20,6 +21,7 @@ type watcher struct {
 }
 
 func NewWatcher(ctx context.Context, client *api.Client) register.Watcher {
+
 	return &watcher{}
 }
 
@@ -32,6 +34,7 @@ func (w *watcher) Next() (arr []*register.ServiceInstance, err error) {
 	if ss, ok := w.set.atoValue.Load().([]*register.ServiceInstance); ok {
 		arr = append(arr, ss...)
 	}
+	fmt.Printf("ss%+v", arr)
 	return
 }
 

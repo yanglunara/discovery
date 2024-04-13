@@ -155,7 +155,6 @@ func (r *Registry) resolve(ctx context.Context, ss *service) (err error) {
 					ss.broadcast(entries)
 				}
 				idx = tmpIdx
-				fmt.Printf("idx %s\n", idx)
 			case <-ctx.Done():
 				r.lock.Lock()
 				delete(r.registry, ss.serviceName)
