@@ -142,7 +142,7 @@ func (r *Registry) resolve(ctx context.Context, ss *service) (err error) {
 		for {
 			select {
 			case <-ticker.C:
-				fmt.Printf("watcher %s\n", ss.serviceName)
+				fmt.Printf("watcher :----: %s\n", ss.serviceName)
 				timeOutCtx, cancel := context.WithTimeout(context.Background(), r.timeout)
 				tmp, tmpIdx, err := r.cli.Service(timeOutCtx, ss.serviceName, idx, true)
 				if err != nil {
