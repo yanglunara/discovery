@@ -33,9 +33,8 @@ func (w *watcher) Next() (arr []*register.ServiceInstance, err error) {
 	}
 	if ss, ok := w.set.atoValue.Load().([]*register.ServiceInstance); ok {
 		arr = append(arr, ss...)
-		fmt.Printf("ss : ----- %+v", arr)
+		fmt.Printf("ss : ----- %+v \n", arr)
 	}
-
 	return
 }
 
