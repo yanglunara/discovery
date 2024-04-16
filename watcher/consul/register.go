@@ -41,11 +41,11 @@ func NewRegistry(client *api.Client) *Registry {
 }
 
 type Registry struct {
-	cli      *Client
-	service  *register.ServiceInstance
-	registry map[string]*service
-	lock     sync.RWMutex
-	timeout  time.Duration
+	cli      *Client                   // 客户端实例
+	service  *register.ServiceInstance // 服务实例
+	registry map[string]*service       // 服务注册表，键为服务名，值为服务实例
+	lock     sync.RWMutex              // 读写锁，用于保护服务注册表的并发访问
+	timeout  time.Duration             // 超时时间
 }
 
 func (r *Registry) Register(ctx context.Context, service *register.ServiceInstance) (err error) {
