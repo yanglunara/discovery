@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yanglunara/discovery/register"
+	"github.com/yanglunara/register"
 	"google.golang.org/grpc/resolver"
 )
 

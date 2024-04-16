@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/yanglunara/discovery/register"
+	"github.com/yanglunara/register"
 )
 
 var (

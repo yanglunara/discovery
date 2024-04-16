@@ -1,4 +1,4 @@
-module github.com/yanglunara/discovery/register/v2
+module github.com/yanglunara/register
 
 go 1.20
 
