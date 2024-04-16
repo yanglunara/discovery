@@ -1,4 +1,4 @@
-# 空余时间 服务发现 
+# 基于 consul 服务发现与注册
 
 ## 已完成
 - Consul
@@ -9,7 +9,6 @@
 ```docker
 docker up -d consul
 ```
-
 
 ## 示例代码
 
@@ -61,3 +60,4 @@ func TestBuilder_Build(t *testing.T) {
 }
 ```
 
+## 服务下线告警
