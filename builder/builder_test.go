@@ -29,7 +29,6 @@ func (m *mockConn) ParseServiceConfig(_ string) *serviceconfig.ParseResult {
 
 func TestBuilder_Build(t *testing.T) {
 	cli, _ := api.NewClient(&api.Config{Address: "host.docker.internal:8500"})
-
 	re := consul.NewRegistry(cli)
 	b := NewBuilder(re)
 	_, _ = b.Build(
@@ -42,26 +41,4 @@ func TestBuilder_Build(t *testing.T) {
 		&mockConn{},
 		resolver.BuildOptions{},
 	)
-	// time.Sleep(100 * time.Second)
-	// if err != nil {
-	// 	t.Errorf("expected no error, got %v", err)
-	// 	return
-	// }
-	// sync := sync.WaitGroup{}
-
-	// sync.Wait()
-	//timeoutBuilder := NewBuilder(&mockDiscovery{}, WithTimeout(0))
-	//_, err = timeoutBuilder.Build(
-	//	resolver.Target{
-	//		URL: url.URL{
-	//			Scheme: resolver.GetDefaultScheme(),
-	//			Path:   "grpc://authority/endpoint",
-	//		},
-	//	},
-	//	&mockConn{},
-	//	resolver.BuildOptions{},
-	//)
-	//if err == nil {
-	//	t.Errorf("expected error, got %v", err)
-	//}
 }
