@@ -6,7 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yanglunara/register"
+	"github.com/hashicorp/consul/api"
+	"github.com/yanglunara/discovery/register"
+	"github.com/yanglunara/discovery/watcher/consul"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -20,6 +22,14 @@ type Builder struct {
 	tiemout    time.Duration
 	cancel     context.CancelFunc
 	resolver   resolver.Resolver
+}
+
+func NewConsulDiscovery(endpoint string) register.Discovery {
+	cli, err := api.NewClient(&api.Config{Address: endpoint})
+	if err != nil {
+		panic(errors.New("init consul error"))
+	}
+	return consul.NewRegistry(cli)
 }
 
 func NewBuilder(b register.Discovery) resolver.Builder {

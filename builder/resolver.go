@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/yanglunara/register"
+	"github.com/yanglunara/discovery/register"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
 )

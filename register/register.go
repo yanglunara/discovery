@@ -52,16 +52,10 @@ type Resolver interface {
 	ServiceResolver(ctx context.Context, entries []*consulApi.ServiceEntry) []*ServiceInstance
 }
 
-type DataCenter string
-
 const (
-	SingleDataCenter DataCenter = "SINGLE"
-	MultiDataCenter  DataCenter = "MULTI"
+	SingleDataCenter = "SINGLE"
+	MultiDataCenter  = "MULTI"
 )
-
-func (d DataCenter) String() string {
-	return string(d)
-}
 
 type EntriesOption struct {
 	Resolver
@@ -69,7 +63,6 @@ type EntriesOption struct {
 	Index        uint64
 	PassingOnly  bool
 	Opts         *consulApi.QueryOptions
-	Dc           DataCenter
 }
 
 type Entries interface {

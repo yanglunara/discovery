@@ -10,15 +10,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/yanglunara/register"
-)
-
-var (
-	_ register.Stopper = (*Client)(nil)
+	"github.com/yanglunara/discovery/register"
 )
 
 type Client struct {
-	dc           register.DataCenter
+	dc           string
 	ctx          context.Context
 	cancel       context.CancelFunc
 	cli          *api.Client
@@ -41,7 +37,7 @@ func (c *Client) Service(ctx context.Context, service string, index uint64, pass
 		WaitTime:  time.Second * 55,
 	}
 	opts = opts.WithContext(ctx)
-	if c.dc == register.MultiDataCenter {
+	if c.dc == "MULTI" {
 		return c.entries.MultiDCService(ctx, &register.EntriesOption{
 			Service:     service,
 			Index:       index,

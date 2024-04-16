@@ -23,7 +23,7 @@ func NewRegistry(client *api.Client) *Registry {
 		timeout:  10 * time.Second,
 		cli: &Client{
 			cli:                            client,
-			dc:                             register.SingleDataCenter,
+			dc:                             "SINGLE",
 			healthCheckInterval:            10 * time.Second,
 			heartBeat:                      true,
 			deregisterCriticalServiceAfter: 600 * time.Second,
