@@ -7,7 +7,7 @@
 ## Docker 环境
 
 ```docker
-docker up -d consul
+cd ./deployment && docker up -d consul
 ```
 
 ## 示例代码
