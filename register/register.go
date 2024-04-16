@@ -63,12 +63,6 @@ func (d DataCenter) String() string {
 	return string(d)
 }
 
-//	type Service interface {
-//		Broadcast(ss []*registry.ServiceInstance)
-//		Load() []*registry.ServiceInstance
-//		Set() error
-//		Get()
-//	}
 type EntriesOption struct {
 	Resolver
 	Service, Tag string
