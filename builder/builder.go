@@ -57,6 +57,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 	var (
 		err error
 	)
+
 	select {
 	case <-done:
 		err = watchRes.err
@@ -69,6 +70,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 		_ = b.discoverer.Close()
 		return nil, err
 	}
+
 	r := &discoveryResolver{
 		w:      watchRes.w,
 		d:      b.discoverer,

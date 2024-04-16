@@ -13,6 +13,7 @@ import (
 type mockConn struct{}
 
 func (m *mockConn) UpdateState(resolver.State) error {
+
 	return nil
 }
 
@@ -35,7 +36,7 @@ func TestBuilder_Build(t *testing.T) {
 		resolver.Target{
 			URL: url.URL{
 				Scheme: resolver.GetDefaultScheme(),
-				Path:   "grpc://authority/endpoint",
+				Path:   "grpc://logic.grpc",
 			},
 		},
 		&mockConn{},

@@ -38,6 +38,7 @@ func (r *discoveryResolver) watch() {
 			ins []*register.ServiceInstance
 			err error
 		)
+
 		if ins, err = r.w.Next(); err != nil {
 			if errors.Is(err, context.Canceled) {
 				time.Sleep(time.Second)
@@ -49,6 +50,7 @@ func (r *discoveryResolver) watch() {
 }
 
 func (r *discoveryResolver) ParseEndpoint(endpoints []string) (string, error) {
+
 	for _, addr := range endpoints {
 		if u, err := url.Parse(addr); err == nil && u.Scheme == "grpc" {
 			return u.Host, nil

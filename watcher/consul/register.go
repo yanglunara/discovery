@@ -132,6 +132,7 @@ func (r *Registry) resolve(ctx context.Context, ss *service) (err error) {
 	if entries, idx, err = r.cli.Service(outCtx, ss.serviceName, 0, true); err != nil {
 		return
 	}
+
 	// 进行广播
 	if len(entries) > 0 {
 		ss.broadcast(entries)
