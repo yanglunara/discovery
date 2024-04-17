@@ -13,6 +13,8 @@ type ServiceInstance struct {
 	Version   string            `json:"version"`   // 编译的版本
 	Metadata  map[string]string `json:"metadata"`  // 与服务实例关联的键值对元数据
 	Endpoints []string          `json:"endpoints"` // 端点
+	//服务实例最后更新的时间戳
+	LastTs int64 `json:"latest_timestamp"`
 }
 
 // Registrar 注册器接口
