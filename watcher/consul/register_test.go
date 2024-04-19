@@ -2,11 +2,24 @@ package consul
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/yanglunara/discovery/register"
 )
+
+func TestURI(t *testing.T) {
+	uri := struct {
+		Netwotk string
+		Address string
+	}{
+		Netwotk: "http",
+		Address: "0.0.0.0:8089",
+	}
+	uris := fmt.Sprintf("%s://%s", uri.Netwotk, uri.Address)
+	t.Logf("uri: %s", uris)
+}
 
 func TestRegister(t *testing.T) {
 
