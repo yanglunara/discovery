@@ -39,6 +39,30 @@ type Service struct {
 	err          error
 }
 
+func Network(network string) ServiceOption {
+	return func(s *Service) {
+		s.network = network
+	}
+}
+
+func Address(address string) ServiceOption {
+	return func(s *Service) {
+		s.address = address
+	}
+}
+
+func Timeout(timeout time.Duration) ServiceOption {
+	return func(s *Service) {
+		s.timeout = timeout
+	}
+}
+
+func OpenHealth() ServiceOption {
+	return func(s *Service) {
+		s.isOpenHealth = true
+	}
+}
+
 func (s *Service) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		ctx, cancel := ct.NewContext(ctx, s.baseCtx)
