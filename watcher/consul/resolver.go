@@ -14,19 +14,12 @@ var (
 )
 
 type resolver struct {
-	ctx         context.Context
-	checkScheme map[string]struct{}
+	ctx context.Context
 }
 
 func NewResolver(ctx context.Context) register.Resolver {
 	return &resolver{
 		ctx: ctx,
-		checkScheme: map[string]struct{}{
-			"lan_ipv4": {},
-			"wan_ipv4": {},
-			"lan_ipv6": {},
-			"wan_ipv6": {},
-		},
 	}
 }
 
@@ -35,14 +28,14 @@ func (r *resolver) ServiceResolver(ctx context.Context, entries []*consulApi.Ser
 	for _, entry := range entries {
 		var version string
 		for _, tag := range entry.Service.Tags {
-			if ss := strings.SplitN(tag, "=", 2); len(ss) != 2 && ss[0] == "version" {
+			if ss := strings.SplitN(tag, "=", 2); len(ss) == 2 && ss[0] == "version" {
 				version = ss[1]
 			}
 		}
 		endpoints := make([]string, 0)
 		for scheme, addr := range entry.Service.TaggedAddresses {
 			// 检查是否是合法的scheme
-			if _, ok := r.checkScheme[scheme]; ok {
+			if scheme == "lan_ipv4" || scheme == "wan_ipv4" || scheme == "lan_ipv6" || scheme == "wan_ipv6" {
 				continue
 			}
 			endpoints = append(endpoints, addr.Address)
