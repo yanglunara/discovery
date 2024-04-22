@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
+
 	"github.com/hashicorp/consul/api"
 	"github.com/yanglunara/discovery/register"
 	"github.com/yanglunara/discovery/watcher/consul"
@@ -35,7 +37,7 @@ func NewConsulDiscovery(endpoint string) register.Discovery {
 func NewBuilder(b register.Discovery) resolver.Builder {
 	return &Builder{
 		discoverer: b,
-		tiemout:    time.Second * 10,
+		tiemout:    time.Second * 15,
 	}
 }
 
@@ -49,6 +51,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 	ctx, cancel := context.WithCancel(context.Background())
 	b.cancel = cancel
 	go func() {
+		fmt.Println("target.URL.Path", target.URL.Path)
 		w, err := b.discoverer.Watch(ctx, strings.TrimPrefix(target.URL.Path, "/"))
 		watchRes.w = w
 		watchRes.err = err

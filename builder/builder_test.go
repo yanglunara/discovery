@@ -35,7 +35,7 @@ func TestBuilder_Build(t *testing.T) {
 		resolver.Target{
 			URL: url.URL{
 				Scheme: resolver.GetDefaultScheme(),
-				Path:   "grpc://logic.grpc",
+				Path:   "grpc://im.logic",
 			},
 		},
 		&mockConn{},
