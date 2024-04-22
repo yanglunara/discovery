@@ -6,11 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"fmt"
-
 	"github.com/hashicorp/consul/api"
 	"github.com/yanglunara/discovery/register"
 	"github.com/yanglunara/discovery/watcher/consul"
+	"github.com/yunbaifan/pkg/logger"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -51,7 +50,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 	ctx, cancel := context.WithCancel(context.Background())
 	b.cancel = cancel
 	go func() {
-		fmt.Println("target.URL.Path", target.URL.Path)
+		logger.Logger.Info("Grpc Service Success")
 		w, err := b.discoverer.Watch(ctx, strings.TrimPrefix(target.URL.Path, "/"))
 		watchRes.w = w
 		watchRes.err = err
