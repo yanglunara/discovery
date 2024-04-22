@@ -3,13 +3,14 @@ package builder
 import (
 	"context"
 	"errors"
+	"github.com/yunbaifan/pkg/logger"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/yanglunara/discovery/register"
 	"github.com/yanglunara/discovery/watcher/consul"
-	"github.com/yunbaifan/pkg/logger"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -46,11 +47,11 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 		err error
 		w   register.Watcher
 	}{}
+	logger.Logger.Info("Grpc Service Success", zap.String("target.URL.Path", target.URL.Path))
 	done := make(chan struct{}, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	b.cancel = cancel
 	go func() {
-		logger.Logger.Info("Grpc Service Success")
 		w, err := b.discoverer.Watch(ctx, strings.TrimPrefix(target.URL.Path, "/"))
 		watchRes.w = w
 		watchRes.err = err
